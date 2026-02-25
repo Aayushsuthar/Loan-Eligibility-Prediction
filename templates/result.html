@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}LoanIQ – Prediction Result{% endblock %}
+
+{% block content %}
+<div class="result-page result-page--{{ 'approved' if result == 'Approved' else 'rejected' }}">
+
+  <div class="result-hero">
+    <div class="result-icon-wrap">
+      {% if result == 'Approved' %}
+        <div class="result-icon result-icon--approved">✓</div>
+      {% else %}
+        <div class="result-icon result-icon--rejected">✗</div>
+      {% endif %}
+    </div>
+    <div class="result-verdict">
+      <p class="result-eyebrow">Prediction Result #{{ record_id }}</p>
+      <h1 class="result-title">Loan {{ result }}</h1>
+      {% if confidence %}
+      <div class="confidence-display">
+        <div class="confidence-bar-wrap">
+          <div class="confidence-bar" style="width: {{ confidence }}%"></div>
+        </div>
+        <span class="confidence-label">{{ confidence }}% confidence</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if result == 'Approved' %}
+  <div class="result-message result-message--approved">
+    <h3>🎉 Great news! Your application looks strong.</h3>
+    <p>Based on the data provided, our <strong>{{ meta.best_model }}</strong> model predicts that your loan application is likely to be <strong>approved</strong>. While this is a predictive estimate, maintaining your credit history and stable income will help maximize your chances with a real lender.</p>
+  </div>
+  {% else %}
+  <div class="result-message result-message--rejected">
+    <h3>⚠️ Your application may face challenges.</h3>
+    <p>Based on the data provided, our model predicts that your application may be <strong>rejected</strong>. Key factors to improve: credit history, income-to-loan ratio, and adding a co-applicant. Consider addressing these before applying.</p>
+  </div>
+  {% endif %}
+
+  <!-- Application Summary -->
+  <div class="summary-card">
+    <h3 class="summary-title">Application Summary</h3>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <span class="summary-label">Gender</span>
+        <span class="summary-value">{{ form_data.get('Gender') }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Married</span>
+        <span class="summary-value">{{ form_data.get('Married') }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Education</span>
+        <span class="summary-value">{{ form_data.get('Education') }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Self Employed</span>
+        <span class="summary-value">{{ form_data.get('Self_Employed') }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Dependents</span>
+        <span class="summary-value">{{ form_data.get('Dependents') }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Property Area</span>
+        <span class="summary-value">{{ form_data.get('Property_Area') }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Applicant Income</span>
+        <span class="summary-value">₹{{ "{:,}".format(form_data.get('ApplicantIncome')|int) }}/mo</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Co-Applicant Income</span>
+        <span class="summary-value">₹{{ "{:,}".format(form_data.get('CoapplicantIncome')|int) }}/mo</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Loan Amount</span>
+        <span class="summary-value">₹{{ "{:,}".format((form_data.get('LoanAmount')|float * 1000)|int) }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Loan Term</span>
+        <span class="summary-value">{{ form_data.get('Loan_Amount_Term') }} months</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Credit History</span>
+        <span class="summary-value {% if form_data.get('Credit_History') == '1' %}text-green{% else %}text-red{% endif %}">
+          {{ 'Good ✓' if form_data.get('Credit_History') == '1' else 'Poor ✗' }}
+        </span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Model Used</span>
+        <span class="summary-value">{{ meta.best_model }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Model Performance Info -->
+  <div class="model-card">
+    <h3 class="model-card-title">Model Performance Comparison</h3>
+    <div class="model-table-wrap">
+      <table class="model-table">
+        <thead>
+          <tr><th>Algorithm</th><th>Test Accuracy</th><th>CV Accuracy</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for name, scores in meta.results.items() %}
+          <tr class="{{ 'row-best' if name == meta.best_model else '' }}">
+            <td class="model-name">{{ name }}</td>
+            <td>
+              <div class="score-bar-wrap">
+                <div class="score-bar" style="width: {{ scores.accuracy }}%"></div>
+                <span class="score-num">{{ scores.accuracy }}%</span>
+              </div>
+            </td>
+            <td>{{ scores.cv_accuracy }}%</td>
+            <td>{% if name == meta.best_model %}<span class="badge-best">Best</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="result-actions">
+    <a href="{{ url_for('index') }}" class="btn-primary">← New Application</a>
+    <a href="{{ url_for('history') }}" class="btn-secondary">View History</a>
+  </div>
+
+</div>
+{% endblock %}

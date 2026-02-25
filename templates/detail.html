@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}LoanIQ – Application #{{ record.id }}{% endblock %}
+
+{% block content %}
+<div class="detail-page">
+  <div class="detail-header">
+    <a href="{{ url_for('history') }}" class="back-link">← Back to History</a>
+    <h1 class="detail-title">Application #{{ record.id }}</h1>
+    <p class="detail-date">Submitted {{ record.created_at[:16].replace('T',' ') }}</p>
+  </div>
+
+  <div class="detail-verdict detail-verdict--{{ 'approved' if record.prediction == 'Approved' else 'rejected' }}">
+    <span class="detail-verdict-icon">{{ '✓' if record.prediction == 'Approved' else '✗' }}</span>
+    <div>
+      <strong>{{ record.prediction }}</strong>
+      {% if record.confidence %}<span>— {{ record.confidence }}% confidence</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="detail-sections">
+    <div class="detail-section">
+      <h3>Personal</h3>
+      <dl class="detail-list">
+        <dt>Gender</dt><dd>{{ record.gender }}</dd>
+        <dt>Married</dt><dd>{{ record.married }}</dd>
+        <dt>Dependents</dt><dd>{{ record.dependents }}</dd>
+        <dt>Education</dt><dd>{{ record.education }}</dd>
+        <dt>Self Employed</dt><dd>{{ record.self_employed }}</dd>
+        <dt>Property Area</dt><dd>{{ record.property_area }}</dd>
+      </dl>
+    </div>
+    <div class="detail-section">
+      <h3>Financial</h3>
+      <dl class="detail-list">
+        <dt>Applicant Income</dt><dd>₹{{ "{:,}".format(record.applicant_income|int) }}/mo</dd>
+        <dt>Co-Applicant Income</dt><dd>₹{{ "{:,}".format(record.coapplicant_income|int) }}/mo</dd>
+        <dt>Total Income</dt><dd>₹{{ "{:,}".format((record.applicant_income + record.coapplicant_income)|int) }}/mo</dd>
+        <dt>Loan Amount</dt><dd>₹{{ "{:,}".format((record.loan_amount * 1000)|int) }}</dd>
+        <dt>Loan Term</dt><dd>{{ record.loan_amount_term|int }} months</dd>
+        <dt>Credit History</dt>
+        <dd class="{{ 'text-green' if record.credit_history == 1.0 else 'text-red' }}">
+          {{ 'Good ✓' if record.credit_history == 1.0 else 'Poor ✗' }}
+        </dd>
+        <dt>Model Used</dt><dd>{{ record.model_used }}</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="detail-actions">
+    <a href="{{ url_for('index') }}" class="btn-primary">New Application</a>
+    <form action="{{ url_for('delete_application', record_id=record.id) }}" method="POST"
+          onsubmit="return confirm('Delete this record?')">
+      <button type="submit" class="btn-danger">Delete Record</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}LoanIQ – Apply for Loan Assessment{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <div class="hero-text">
+    <p class="hero-eyebrow">ML-Powered Assessment</p>
+    <h1 class="hero-title">Find Out If You<br><em>Qualify</em> Instantly</h1>
+    <p class="hero-sub">Our {{ meta.best_model }} model ({{ meta.best_accuracy }}% accuracy) analyzes 11 factors to predict your loan eligibility in seconds.</p>
+  </div>
+
+  {% if stats.total > 0 %}
+  <div class="stats-bar">
+    <div class="stat-pill">
+      <span class="stat-num">{{ stats.total }}</span>
+      <span class="stat-label">Total Applications</span>
+    </div>
+    <div class="stat-pill stat-pill--green">
+      <span class="stat-num">{{ stats.approved }}</span>
+      <span class="stat-label">Approved</span>
+    </div>
+    <div class="stat-pill stat-pill--red">
+      <span class="stat-num">{{ stats.rejected }}</span>
+      <span class="stat-label">Rejected</span>
+    </div>
+    <div class="stat-pill stat-pill--accent">
+      <span class="stat-num">{{ stats.approval_rate }}%</span>
+      <span class="stat-label">Approval Rate</span>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="form-wrapper">
+  <form action="{{ url_for('predict') }}" method="POST" class="loan-form" id="loanForm">
+
+    <!-- Section 1: Personal -->
+    <div class="form-section">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <div>
+          <h2 class="section-title">Personal Information</h2>
+          <p class="section-desc">Tell us about yourself and your household.</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label class="field-label" for="Gender">Gender</label>
+          <div class="radio-group">
+            <label class="radio-card"><input type="radio" name="Gender" value="Male" required checked> <span>Male</span></label>
+            <label class="radio-card"><input type="radio" name="Gender" value="Female"> <span>Female</span></label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="Married">Marital Status</label>
+          <div class="radio-group">
+            <label class="radio-card"><input type="radio" name="Married" value="Yes" required> <span>Married</span></label>
+            <label class="radio-card"><input type="radio" name="Married" value="No" checked> <span>Single</span></label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="Dependents">Dependents</label>
+          <select name="Dependents" id="Dependents" class="field-select">
+            <option value="0" selected>0 – None</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3+">3 or more</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Education</label>
+          <div class="radio-group">
+            <label class="radio-card"><input type="radio" name="Education" value="Graduate" required checked> <span>Graduate</span></label>
+            <label class="radio-card"><input type="radio" name="Education" value="Not Graduate"> <span>Not Graduate</span></label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Self Employed</label>
+          <div class="radio-group">
+            <label class="radio-card"><input type="radio" name="Self_Employed" value="Yes" required> <span>Yes</span></label>
+            <label class="radio-card"><input type="radio" name="Self_Employed" value="No" checked> <span>No</span></label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="Property_Area">Property Area</label>
+          <select name="Property_Area" id="Property_Area" class="field-select">
+            <option value="Urban">Urban</option>
+            <option value="Semiurban" selected>Semiurban</option>
+            <option value="Rural">Rural</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Financial -->
+    <div class="form-section">
+      <div class="section-header">
+        <span class="section-num">02</span>
+        <div>
+          <h2 class="section-title">Financial Details</h2>
+          <p class="section-desc">Income figures in ₹ (monthly), loan amount in thousands.</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label class="field-label" for="ApplicantIncome">Applicant Monthly Income (₹)</label>
+          <div class="input-wrap">
+            <span class="input-prefix">₹</span>
+            <input type="number" name="ApplicantIncome" id="ApplicantIncome"
+                   class="field-input field-input--prefix"
+                   placeholder="e.g. 5000" min="0" required>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="CoapplicantIncome">Co-Applicant Income (₹)</label>
+          <div class="input-wrap">
+            <span class="input-prefix">₹</span>
+            <input type="number" name="CoapplicantIncome" id="CoapplicantIncome"
+                   class="field-input field-input--prefix"
+                   placeholder="0 if none" min="0" value="0">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="LoanAmount">Loan Amount (in ₹ thousands)</label>
+          <div class="input-wrap">
+            <input type="number" name="LoanAmount" id="LoanAmount"
+                   class="field-input"
+                   placeholder="e.g. 150" min="1" required>
+            <span class="input-suffix">k</span>
+          </div>
+          <span class="field-hint" id="loanAmountDisplay"></span>
+        </div>
+        <div class="field">
+          <label class="field-label" for="Loan_Amount_Term">Loan Term (months)</label>
+          <select name="Loan_Amount_Term" id="Loan_Amount_Term" class="field-select">
+            <option value="360" selected>360 (30 years)</option>
+            <option value="180">180 (15 years)</option>
+            <option value="480">480 (40 years)</option>
+            <option value="300">300 (25 years)</option>
+            <option value="240">240 (20 years)</option>
+            <option value="120">120 (10 years)</option>
+            <option value="84">84 (7 years)</option>
+            <option value="60">60 (5 years)</option>
+            <option value="36">36 (3 years)</option>
+            <option value="12">12 (1 year)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Credit -->
+    <div class="form-section">
+      <div class="section-header">
+        <span class="section-num">03</span>
+        <div>
+          <h2 class="section-title">Credit History</h2>
+          <p class="section-desc">Credit history is the most influential factor in approval.</p>
+        </div>
+      </div>
+      <div class="credit-selector">
+        <label class="credit-card credit-card--good">
+          <input type="radio" name="Credit_History" value="1" required checked>
+          <div class="credit-content">
+            <span class="credit-icon">✓</span>
+            <strong>Good Credit</strong>
+            <p>Has met debt obligations</p>
+          </div>
+        </label>
+        <label class="credit-card credit-card--bad">
+          <input type="radio" name="Credit_History" value="0">
+          <div class="credit-content">
+            <span class="credit-icon">✗</span>
+            <strong>No / Poor Credit</strong>
+            <p>No credit history or defaults</p>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <button type="submit" class="btn-submit" id="submitBtn">
+        <span class="btn-text">Predict Eligibility</span>
+        <span class="btn-icon">→</span>
+      </button>
+      <p class="form-disclaimer">This prediction is for informational purposes only and does not constitute a binding financial decision.</p>
+    </div>
+
+  </form>
+</div>
+
+{% if recent %}
+<div class="recent-section">
+  <h3 class="recent-title">Recent Applications</h3>
+  <div class="recent-list">
+    {% for r in recent %}
+    <a href="{{ url_for('application_detail', record_id=r.id) }}" class="recent-item">
+      <span class="recent-badge recent-badge--{{ 'green' if r.prediction == 'Approved' else 'red' }}">{{ r.prediction }}</span>
+      <span class="recent-meta">{{ r.education }} · ₹{{ "{:,}".format(r.applicant_income|int) }}/mo · {{ r.property_area }}</span>
+      <span class="recent-time">{{ r.created_at[5:10] }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  <a href="{{ url_for('history') }}" class="link-all">View all applications →</a>
+</div>
+{% endif %}
+
+<script>
+  // Live loan amount display
+  document.getElementById('LoanAmount').addEventListener('input', function() {
+    const val = parseFloat(this.value);
+    const el = document.getElementById('loanAmountDisplay');
+    if (val) {
+      el.textContent = '= ₹ ' + (val * 1000).toLocaleString('en-IN');
+    } else {
+      el.textContent = '';
+    }
+  });
+
+  // Animate radio cards
+  document.querySelectorAll('.radio-card input, .credit-card input').forEach(input => {
+    input.addEventListener('change', function() {
+      const group = this.closest('.radio-group, .credit-selector');
+      if (group) {
+        group.querySelectorAll('.radio-card, .credit-card').forEach(c => c.classList.remove('selected'));
+        this.closest('.radio-card, .credit-card')?.classList.add('selected');
+      }
+    });
+    if (input.checked) {
+      input.closest('.radio-card, .credit-card')?.classList.add('selected');
+    }
+  });
+
+  // Submit loading state
+  document.getElementById('loanForm').addEventListener('submit', function() {
+    const btn = document.getElementById('submitBtn');
+    btn.innerHTML = '<span class="btn-text">Analyzing…</span><span class="btn-spinner"></span>';
+    btn.disabled = true;
+  });
+</script>
+{% endblock %}

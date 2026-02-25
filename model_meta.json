@@ -1,0 +1,76 @@
+{
+  "best_model": "Logistic Regression",
+  "best_accuracy": 74.8,
+  "results": {
+    "Random Forest": {
+      "accuracy": 69.92,
+      "cv_accuracy": 74.6
+    },
+    "Gradient Boosting": {
+      "accuracy": 69.92,
+      "cv_accuracy": 72.15
+    },
+    "Logistic Regression": {
+      "accuracy": 74.8,
+      "cv_accuracy": 77.2
+    },
+    "Decision Tree": {
+      "accuracy": 60.16,
+      "cv_accuracy": 66.77
+    },
+    "SVM": {
+      "accuracy": 70.73,
+      "cv_accuracy": 73.45
+    },
+    "Naive Bayes": {
+      "accuracy": 74.8,
+      "cv_accuracy": 76.71
+    },
+    "KNN": {
+      "accuracy": 65.04,
+      "cv_accuracy": 66.94
+    }
+  },
+  "feature_order": [
+    "Gender",
+    "Married",
+    "Dependents",
+    "Education",
+    "Self_Employed",
+    "ApplicantIncome",
+    "CoapplicantIncome",
+    "LoanAmount",
+    "Loan_Amount_Term",
+    "Credit_History",
+    "Property_Area"
+  ],
+  "label_encodings": {
+    "Gender": {
+      "Female": 0,
+      "Male": 1
+    },
+    "Married": {
+      "No": 0,
+      "Yes": 1
+    },
+    "Education": {
+      "Graduate": 0,
+      "Not Graduate": 1
+    },
+    "Self_Employed": {
+      "No": 0,
+      "Yes": 1
+    },
+    "Property_Area": {
+      "Rural": 0,
+      "Semiurban": 1,
+      "Urban": 2
+    },
+    "Dependents": {
+      "0": 0,
+      "1": 1,
+      "2": 2,
+      "3+": 3
+    }
+  }
+}

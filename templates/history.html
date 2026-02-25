@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}LoanIQ – Application History{% endblock %}
+
+{% block content %}
+<div class="history-page">
+
+  <div class="history-header">
+    <div>
+      <h1 class="history-title">Application Dashboard</h1>
+      <p class="history-sub">All loan eligibility predictions stored in SQLite.</p>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn-primary">+ New Application</a>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="dash-stats">
+    <div class="dash-card">
+      <span class="dash-num">{{ total }}</span>
+      <span class="dash-label">Total</span>
+    </div>
+    <div class="dash-card dash-card--green">
+      <span class="dash-num">{{ approved }}</span>
+      <span class="dash-label">Approved</span>
+    </div>
+    <div class="dash-card dash-card--red">
+      <span class="dash-num">{{ rejected }}</span>
+      <span class="dash-label">Rejected</span>
+    </div>
+    <div class="dash-card dash-card--accent">
+      <span class="dash-num">{{ ((approved / total * 100)|round(1)) if total else 0 }}%</span>
+      <span class="dash-label">Approval Rate</span>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  {% if total > 0 %}
+  <div class="charts-row">
+    <div class="chart-box">
+      <h4 class="chart-title">Approval Breakdown</h4>
+      <canvas id="pieChart" width="220" height="220"></canvas>
+    </div>
+    <div class="chart-box chart-box--wide">
+      <h4 class="chart-title">Applications by Income Range</h4>
+      <canvas id="barChart" width="400" height="220"></canvas>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Table -->
+  {% if applications %}
+  <div class="table-wrap">
+    <table class="app-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date</th>
+          <th>Education</th>
+          <th>Income</th>
+          <th>Loan Amount</th>
+          <th>Credit</th>
+          <th>Area</th>
+          <th>Result</th>
+          <th>Confidence</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in applications %}
+        <tr>
+          <td class="td-id">{{ app.id }}</td>
+          <td class="td-date">{{ app.created_at[:16].replace('T',' ') }}</td>
+          <td>{{ app.education }}</td>
+          <td>₹{{ "{:,}".format(app.applicant_income|int) }}</td>
+          <td>₹{{ "{:,}".format((app.loan_amount * 1000)|int) }}</td>
+          <td>
+            {% if app.credit_history == 1.0 %}
+              <span class="badge-good">Good</span>
+            {% else %}
+              <span class="badge-poor">Poor</span>
+            {% endif %}
+          </td>
+          <td>{{ app.property_area }}</td>
+          <td>
+            <span class="result-badge result-badge--{{ 'green' if app.prediction == 'Approved' else 'red' }}">
+              {{ app.prediction }}
+            </span>
+          </td>
+          <td>{{ app.confidence }}%</td>
+          <td class="td-actions">
+            <a href="{{ url_for('application_detail', record_id=app.id) }}" class="action-link">View</a>
+            <form action="{{ url_for('delete_application', record_id=app.id) }}" method="POST" style="display:inline"
+                  onsubmit="return confirm('Delete this record?')">
+              <button type="submit" class="action-del">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if pages > 1 %}
+  <div class="pagination">
+    {% if has_prev %}
+      <a href="{{ url_for('history', page=prev_num) }}" class="page-btn">← Prev</a>
+    {% endif %}
+    {% for p in page_range %}
+      {% if p %}
+        <a href="{{ url_for('history', page=p) }}" class="page-btn {{ 'page-btn--active' if p == page }}">{{ p }}</a>
+      {% else %}
+        <span class="page-ellipsis">…</span>
+      {% endif %}
+    {% endfor %}
+    {% if has_next %}
+      <a href="{{ url_for('history', page=next_num) }}" class="page-btn">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📋</div>
+    <h3>No applications yet</h3>
+    <p>Submit your first loan application to see it here.</p>
+    <a href="{{ url_for('index') }}" class="btn-primary">Apply Now</a>
+  </div>
+  {% endif %}
+
+</div>
+
+{% if total > 0 %}
+<script>
+(function() {
+  // Pie chart
+  const pieCtx = document.getElementById('pieChart').getContext('2d');
+  const approved = {{ approved }};
+  const rejected = {{ rejected }};
+  const total    = {{ total }};
+
+  function drawPie(ctx, data, colors) {
+    let start = -Math.PI / 2;
+    const cx = ctx.canvas.width / 2, cy = ctx.canvas.height / 2, r = Math.min(cx, cy) - 20;
+    const sum = data.reduce((a,b) => a+b, 0);
+    data.forEach((val, i) => {
+      const slice = (val / sum) * 2 * Math.PI;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, start, start + slice);
+      ctx.fillStyle = colors[i];
+      ctx.fill();
+      start += slice;
+    });
+    // Center label
+    ctx.fillStyle = '#1a1a2e';
+    ctx.font = 'bold 18px DM Sans';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(Math.round(approved/total*100) + '%', cx, cy - 8);
+    ctx.font = '12px DM Sans';
+    ctx.fillStyle = '#666';
+    ctx.fillText('Approved', cx, cy + 12);
+  }
+  drawPie(pieCtx, [approved, rejected], ['#22c55e', '#ef4444']);
+
+  // Bar chart
+  const barCtx = document.getElementById('barChart').getContext('2d');
+  const buckets = {{ income_buckets|safe }};
+  const labels = Object.keys(buckets);
+  const values = Object.values(buckets);
+  const maxVal = Math.max(...values, 1);
+  const bw = barCtx.canvas.width;
+  const bh = barCtx.canvas.height;
+  const barW = (bw - 60) / labels.length - 15;
+  const chartH = bh - 50;
+
+  barCtx.fillStyle = '#f0f4ff';
+  barCtx.fillRect(0, 0, bw, bh);
+
+  labels.forEach((lbl, i) => {
+    const barH = (values[i] / maxVal) * (chartH - 20);
+    const x = 40 + i * ((bw - 60) / labels.length);
+    const y = chartH - barH;
+
+    // Bar
+    const grad = barCtx.createLinearGradient(x, y, x, chartH);
+    grad.addColorStop(0, '#6366f1');
+    grad.addColorStop(1, '#818cf8');
+    barCtx.fillStyle = grad;
+    barCtx.beginPath();
+    barCtx.roundRect(x, y, barW, barH, 4);
+    barCtx.fill();
+
+    // Label
+    barCtx.fillStyle = '#555';
+    barCtx.font = '11px DM Sans';
+    barCtx.textAlign = 'center';
+    barCtx.fillText(lbl, x + barW/2, bh - 8);
+
+    // Value
+    barCtx.fillStyle = '#333';
+    barCtx.font = 'bold 12px DM Sans';
+    barCtx.fillText(values[i], x + barW/2, y - 5);
+  });
+})();
+</script>
+{% endif %}
+
+{% endblock %}
