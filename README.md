@@ -106,3 +106,4 @@ loan_applications (
 ## 📜 License
 
 MIT License — see LICENSE file.
+## Author: Aayush Suthar
