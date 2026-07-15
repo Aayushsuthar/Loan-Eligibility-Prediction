@@ -1,6 +1,6 @@
 # 🏦 LoanIQ — Loan Eligibility Prediction Web App
 
-A production-ready machine learning web application that predicts loan eligibility using 7 different classification algorithms. Built with **Flask**, **SQLite**, and **scikit-learn**.
+A production-ready machine learning web application that predicts loan eligibility using 7 different classification algorithms. Built with **Flask**, **SQLite**, and **scikit-learn**. Deployed with a clean, production-ready architecture.
 
 ## ✨ Features
 
